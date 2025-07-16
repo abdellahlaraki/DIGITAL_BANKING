@@ -1,0 +1,3 @@
+[submodule "digital-banking-web"]
+	path = digital-banking-web
+	url = https://github.com/abdellahlaraki/digital-banking-web.git
