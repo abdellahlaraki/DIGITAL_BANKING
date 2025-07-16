@@ -2,10 +2,7 @@ package ma.laraki.ebankingbackend.web;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.AllArgsConstructor;
-import ma.laraki.ebankingbackend.dtos.PasswordChangeDTO;
-import ma.laraki.ebankingbackend.dtos.UserCreationDTO;
-import ma.laraki.ebankingbackend.dtos.UserDTO;
-import ma.laraki.ebankingbackend.dtos.UserProfileDTO;
+import ma.laraki.ebankingbackend.dtos.*;
 import ma.laraki.ebankingbackend.entities.Role;
 import ma.laraki.ebankingbackend.entities.User;
 import ma.laraki.ebankingbackend.repositories.RoleRepository;
@@ -132,6 +129,41 @@ public class UserRestController {
         userRepository.deleteById(id);
 
         return ResponseEntity.ok(Collections.singletonMap("message", "User deleted successfully"));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @RequestBody UserUpdateDTO userUpdateDTO) {
+        Optional<User> optionalUser = userRepository.findById(id);
+        if (!optionalUser.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        User user = optionalUser.get();
+
+        // Update username and enabled
+        user.setUsername(userUpdateDTO.getUsername());
+        user.setEnabled(userUpdateDTO.isEnabled());
+
+        // Update roles by fetching Role entities by roleName (assumes you have RoleRepository)
+        List<Role> roles = roleRepository.findByRoleNameIn(userUpdateDTO.getRoles());
+        user.setRoles(roles);
+
+        userRepository.save(user);
+
+        return ResponseEntity.ok(new UserDTO(user));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<UserDTO> getUser(@PathVariable Long id) {
+        return userRepository.findById(id)
+                .map(user -> ResponseEntity.ok(new UserDTO(user)))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/search")
+    public List<UserDTO> searchUsers(@RequestParam("username") String username) {
+        List<User> users = userRepository.findByUsernameContainingIgnoreCase(username);
+        return users.stream().map(UserDTO::new).collect(Collectors.toList());
     }
 
 }
